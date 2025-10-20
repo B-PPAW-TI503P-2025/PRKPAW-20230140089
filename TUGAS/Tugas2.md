@@ -1,0 +1,5 @@
+![Read All Data Buku](image.png)
+![Read Data Buku BY ID : 3](image-1.png)
+![Create Buku Baru](image-2.png)
+![Update Buku ](image-3.png)
+![Delete Buku](image-4.png)
