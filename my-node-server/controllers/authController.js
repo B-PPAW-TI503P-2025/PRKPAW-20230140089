@@ -29,6 +29,7 @@ exports.register = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("Kesalahan Registrasi:", error);
     if (error.name === 'SequelizeUniqueConstraintError') {
       return res.status(400).json({ message: "Email sudah terdaftar." });
     }
@@ -67,6 +68,7 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("Kesalahan Login:", error);
     res.status(500).json({ message: "Terjadi kesalahan pada server", error: error.message });
   }
 };
