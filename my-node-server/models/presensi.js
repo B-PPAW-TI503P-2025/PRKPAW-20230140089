@@ -4,7 +4,10 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Presensi extends Model {
     static associate(models) {
-      // define association here
+      Presensi.belongsTo(models.User, {
+        foreignKey: 'userId',
+        as: 'user'
+      });
     }
   }
 
@@ -13,24 +16,28 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    nama: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     checkIn: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
     },
     checkOut: {
       type: DataTypes.DATE,
       allowNull: true,
+    },
+    latitude: {
+      type: DataTypes.FLOAT,
+      allowNull: true
+    },
+    longitude: {
+      type: DataTypes.FLOAT,
+      allowNull: true
     }
   }, {
     sequelize,
     modelName: 'Presensi',
-    tableName: 'presensi',   // 🟢 tambahkan baris ini
-    freezeTableName: true,   // 🟢 mencegah Sequelize menjamakkan nama tabel
-    timestamps: true         // opsional, sesuaikan dengan struktur tabel
+    tableName: 'presensi',
+    freezeTableName: true,
+    timestamps: true
   });
 
   return Presensi;
