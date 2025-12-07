@@ -12,32 +12,17 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Presensi.init({
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    checkIn: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    checkOut: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    latitude: {
-      type: DataTypes.FLOAT,
-      allowNull: true
-    },
-    longitude: {
-      type: DataTypes.FLOAT,
-      allowNull: true
-    }
+    userId: DataTypes.INTEGER,
+    checkIn: DataTypes.DATE,
+    checkOut: DataTypes.DATE,
+    latitude: DataTypes.FLOAT,
+    longitude: DataTypes.FLOAT,
+    buktiFoto: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Presensi',
     tableName: 'presensi',
-    freezeTableName: true,
-    timestamps: true
+    freezeTableName: true
   });
 
   return Presensi;

@@ -1,105 +1,91 @@
 // controllers/presensiController.js
+
 const { Presensi } = require("../models");
-const { Op } = require("sequelize");
+const multer = require("multer");
+const path = require("path");
 
-// Helper untuk menentukan rentang tanggal hari ini
-function getTodayRange() {
-  const now = new Date();
+// Konfigurasi Multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    // Contoh: 8-1765033146978.jpg
+    cb(null, `${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
+  }
+});
 
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  const start = new Date(`${year}-${month}-${day} 00:00:00`);
-  const end = new Date(`${year}-${month}-${day} 23:59:59`);
-
-  return { start, end };
-}
-
-// ============================
-// CHECK-IN
-// ============================
-exports.checkIn = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { latitude, longitude } = req.body;
-
-    const { start, end } = getTodayRange();
-
-    // Cek apakah sudah check-in hari ini
-    const existing = await Presensi.findOne({
-      where: {
-        userId,
-        checkIn: { [Op.between]: [start, end] }
-      }
-    });
-
-    if (existing) {
-      return res.status(400).json({ message: "Anda sudah check-in hari ini." });
-    }
-
-    const presensi = await Presensi.create({
-      userId,
-      checkIn: new Date(),
-      latitude,
-      longitude
-    });
-
-    return res.json({
-      message: "Check-in berhasil",
-      data: presensi
-    });
-
-  } catch (error) {
-    console.error("Check-in Error:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
-  }
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) cb(null, true);
+  else cb(new Error("Hanya file gambar yang diperbolehkan!"), false);
 };
 
+exports.upload = multer({
+  storage,
+  fileFilter
+});
 
-// ============================
-// CHECK-OUT
-// ============================
+// Check-In
+exports.checkIn = async (req, res) => {
+  try {
+    const { id: userId, nama } = req.user;
+    const { latitude, longitude } = req.body;
+
+    // 🔑 PERBAIKAN KRITIS: Menggunakan filename dan menggabungkannya dengan folder 'uploads'
+    // Ini memastikan jalur disimpan dengan forward slash (/) dan sesuai dengan logika reportController
+    let buktiFotoPath = null;
+    if (req.file) {
+        // Kita simpan format yang konsisten, misalnya: uploads/8-1765033146978.jpg
+        buktiFotoPath = path.join('uploads', req.file.filename).replace(/\\/g, '/');
+    }
+    
+    const already = await Presensi.findOne({
+      where: {
+        userId,
+        checkOut: null
+      }
+    });
+
+    if (already) {
+      return res
+        .status(400)
+        .json({ message: "Anda sudah melakukan check-in, lakukan check-out dulu!" });
+    }
+
+    await Presensi.create({
+      userId,
+      checkIn: new Date(),
+      latitude,
+      longitude,
+      buktiFoto: buktiFotoPath // Menggunakan jalur yang sudah dinormalisasi
+    });
+
+    res.json({ message: "Check-In berhasil!" });
+  } catch (err) {
+    console.error("CheckIn error:", err);
+    res.status(500).json({ message: "Terjadi kesalahan server." });
+  }
+};
+
+// Check-Out
 exports.checkOut = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { latitude, longitude } = req.body;
+  try {
+    const record = await Presensi.findOne({
+      where: { userId: req.user.id, checkOut: null }
+    });
 
-    const { start, end } = getTodayRange();
+    if (!record) {
+      return res.status(400).json({ message: "Tidak ada Check-In aktif." });
+    }
 
-    // Cek record check-in hari ini
-    const presensi = await Presensi.findOne({
-      where: {
-        userId,
-        checkIn: { [Op.between]: [start, end] }
-      }
-    });
+    // Catatan: Jika check-out juga memerlukan foto, Anda perlu menambahkan
+    // middleware upload Multer di sini dan menyimpan buktiFoto baru.
+    
+    record.checkOut = new Date();
+    await record.save();
 
-    if (!presensi) {
-      return res.status(400).json({ message: "Anda belum check-in hari ini." });
-    }
-
-    if (presensi.checkOut) {
-      return res.status(400).json({ message: "Anda sudah check-out hari ini." });
-    }
-
-    // Simpan checkout + lokasi
-    presensi.checkOut = new Date();
-    presensi.latitude = latitude || presensi.latitude;
-    presensi.longitude = longitude || presensi.longitude;
-
-    await presensi.save();
-
-    return res.json({
-      message: "Check-out berhasil",
-      data: presensi
-    });
-
-  } catch (error) {
-    console.error("Check-out Error:", error);
-    return res.status(500).json({
-      message: "Server error",
-      error: error.message
-    });
-  }
+    res.json({ message: "Check-Out berhasil!" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error check-out." });
+  }
 };
