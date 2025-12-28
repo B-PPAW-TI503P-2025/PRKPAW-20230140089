@@ -13,6 +13,7 @@ const presensiRoutes = require("./routes/presensi");
 const reportRoutes = require("./routes/reports");
 const authRoutes = require("./routes/auth");
 const booksRoutes = require("./routes/books");
+const iotRoutes = require("./routes/iot")
 
 // Middleware
 app.use(cors());
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/books", booksRoutes);
 app.use("/api/presensi", presensiRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/iot",iotRoutes);
 
 app.listen(PORT, () => {
   console.log(`Express server running at http://localhost:${PORT}/`);
